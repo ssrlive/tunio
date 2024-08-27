@@ -25,8 +25,7 @@ async fn main() {
     iff.add_address("18.3.5.6/24".parse().unwrap()).unwrap();
     iff.add_address("20.3.5.6/24".parse().unwrap()).unwrap();
     iff.remove_address("18.3.5.6/24".parse().unwrap()).unwrap();
-    iff.add_address("fd3c:dea:7f96:2b14::/64".parse().unwrap())
-        .unwrap();
+    iff.add_address("fd3c:dea:7f96:2b14::/64".parse().unwrap()).unwrap();
 
     for _ in 1..10 {
         let builder = PacketBuilder::ipv6(
@@ -39,7 +38,7 @@ async fn main() {
         let mut packet = Vec::with_capacity(builder.size(0));
         builder.write(&mut packet, &[]).unwrap();
 
-        interface.write(&*packet).await;
+        let _ = interface.write(&*packet).await;
 
         sleep(Duration::from_secs(1));
     }
@@ -51,5 +50,5 @@ async fn main() {
         buf.resize(4096, 0u8);
     }
 
-    tokio::signal::ctrl_c().await;
+    let _ = tokio::signal::ctrl_c().await;
 }

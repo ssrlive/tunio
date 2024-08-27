@@ -32,18 +32,12 @@ impl<Q: FdQueueT> InterfaceT for LinuxInterface<Q> {
     type PlatformDriver = Driver;
     type PlatformIfConfig = PlatformIfConfig;
 
-    fn new(
-        _driver: &mut Self::PlatformDriver,
-        params: IfConfig<Self::PlatformIfConfig>,
-    ) -> Result<Self, Error> {
+    fn new(_driver: &mut Self::PlatformDriver, params: IfConfig<Self::PlatformIfConfig>) -> Result<Self, Error> {
         let Device { device, name } = create_device(&params.name, params.layer, Q::BLOCKING)?;
         let queue = Q::new(device.into());
 
         if params.name != name {
-            debug!(
-                "Interface name is changed \"{}\" -> \"{}\"",
-                params.name, name
-            );
+            debug!("Interface name is changed \"{}\" -> \"{}\"", params.name, name);
         }
 
         Ok(Self { name, queue })

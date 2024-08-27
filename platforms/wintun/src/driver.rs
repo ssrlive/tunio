@@ -13,13 +13,12 @@ impl DriverT for Driver {
 
     fn new() -> Result<Self, Error> {
         let library_name = "wintun".to_string();
-        let wintun = Arc::new(
-            unsafe { wintun_sys::wintun::new(library_name) }.map_err(|e| {
-                Error::LibraryNotLoaded {
+        let wintun =
+            Arc::new(
+                unsafe { wintun_sys::wintun::new(library_name) }.map_err(|e| Error::LibraryNotLoaded {
                     reason: format!("{e:?}"),
-                }
-            })?,
-        );
+                })?,
+            );
 
         unsafe {
             wintun.WintunSetLogger(Some(wintun_logger));

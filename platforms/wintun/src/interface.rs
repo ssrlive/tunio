@@ -9,9 +9,10 @@ use std::sync::Arc;
 use tunio_core::config::{IfConfig, Layer};
 use tunio_core::traits::InterfaceT;
 use tunio_core::Error;
-use windows::core::GUID;
-use windows::Win32::NetworkManagement::IpHelper::ConvertInterfaceLuidToIndex;
-use windows::Win32::NetworkManagement::Ndis::NET_LUID_LH;
+use windows_sys::{
+    core::GUID,
+    Win32::NetworkManagement::{IpHelper::ConvertInterfaceLuidToIndex, Ndis::NET_LUID_LH},
+};
 
 pub struct CommonInterface<Q: SessionQueueT> {
     wintun: Arc<wintun_sys::wintun>,
@@ -24,10 +25,7 @@ impl<Q: SessionQueueT> InterfaceT for CommonInterface<Q> {
     type PlatformDriver = Driver;
     type PlatformIfConfig = PlatformIfConfig;
 
-    fn new(
-        driver: &mut Self::PlatformDriver,
-        params: IfConfig<Self::PlatformIfConfig>,
-    ) -> Result<Self, Error> {
+    fn new(driver: &mut Self::PlatformDriver, params: IfConfig<Self::PlatformIfConfig>) -> Result<Self, Error> {
         let _ = Session::validate_capacity(params.platform.capacity);
         if params.layer == Layer::L2 {
             return Err(Error::LayerUnsupported(params.layer));
@@ -51,11 +49,7 @@ impl<Q: SessionQueueT> InterfaceT for CommonInterface<Q> {
     }
 
     fn up(&mut self) -> Result<(), Error> {
-        let session = Session::new(
-            self.adapter.clone(),
-            self.wintun.clone(),
-            self.config.platform.capacity,
-        )?;
+        let session = Session::new(self.adapter.clone(), self.wintun.clone(), self.config.platform.capacity)?;
         self.queue = Some(Q::new(session));
 
         Ok(())
@@ -72,9 +66,7 @@ impl<Q: SessionQueueT> InterfaceT for CommonInterface<Q> {
             Value: self.adapter.luid(),
         };
 
-        unsafe {
-            ConvertInterfaceLuidToIndex(&luid, &mut index).unwrap();
-        }
+        let _ = unsafe { ConvertInterfaceLuidToIndex(&luid, &mut index) };
 
         netconfig::Interface::try_from_index(index).unwrap()
     }

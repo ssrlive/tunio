@@ -1,17 +1,16 @@
 use super::event::SafeEvent;
 use super::wrappers::Session;
 use crate::queue::SessionQueueT;
+use crate::wrappers::HandleWrapper;
 use futures::{AsyncRead, AsyncWrite};
 use std::future::Future;
 use std::io::{self, Read, Write};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use windows::Win32::Foundation::WIN32_ERROR;
-use windows::{
-    Win32::Foundation::HANDLE, Win32::Foundation::WAIT_ABANDONED_0,
-    Win32::Foundation::WAIT_OBJECT_0, Win32::System::Threading::WaitForMultipleObjects,
-    Win32::System::WindowsProgramming::INFINITE,
+use windows_sys::Win32::{
+    Foundation::{FALSE, HANDLE, WAIT_ABANDONED_0, WAIT_EVENT, WAIT_OBJECT_0},
+    System::Threading::{WaitForMultipleObjects, INFINITE},
 };
 
 enum WaitingStopReason {
@@ -51,12 +50,12 @@ impl Drop for AsyncQueue {
     }
 }
 
-fn wait_for_read(read_event: HANDLE, shutdown_event: Arc<SafeEvent>) -> WaitingStopReason {
-    const WAIT_OBJECT_1: WIN32_ERROR = WIN32_ERROR(WAIT_OBJECT_0.0 + 1);
-    const WAIT_ABANDONED_1: WIN32_ERROR = WIN32_ERROR(WAIT_ABANDONED_0.0 + 1);
+fn wait_for_read(read_event: HandleWrapper<HANDLE>, shutdown_event: Arc<SafeEvent>) -> WaitingStopReason {
+    const WAIT_OBJECT_1: WAIT_EVENT = WAIT_OBJECT_0 + 1;
+    const WAIT_ABANDONED_1: WAIT_EVENT = WAIT_ABANDONED_0 + 1;
 
-    match unsafe { WaitForMultipleObjects(&[shutdown_event.handle(), read_event], false, INFINITE) }
-    {
+    let handles = [shutdown_event.handle().0, read_event.0];
+    match unsafe { WaitForMultipleObjects(handles.len() as u32, &handles as _, FALSE, INFINITE) } {
         // Shutdown
         WAIT_OBJECT_0 | WAIT_ABANDONED_0 => WaitingStopReason::Shutdown,
         // Ready for read
@@ -73,11 +72,7 @@ fn wait_for_read(read_event: HANDLE, shutdown_event: Arc<SafeEvent>) -> WaitingS
 }
 
 impl AsyncRead for AsyncQueue {
-    fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+    fn poll_read(mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<io::Result<usize>> {
         loop {
             match &mut self.read_state {
                 ReadState::Waiting(task) => {
@@ -100,10 +95,9 @@ impl AsyncRead for AsyncQueue {
                             let read_event = self.session.read_event();
                             let inner_shutdown_event = self.shutdown_event.clone();
 
-                            self.read_state =
-                                ReadState::Waiting(Some(blocking::unblock(move || {
-                                    wait_for_read(read_event, inner_shutdown_event)
-                                })));
+                            self.read_state = ReadState::Waiting(Some(blocking::unblock(move || {
+                                wait_for_read(read_event, inner_shutdown_event)
+                            })));
                         } else {
                             return Poll::Ready(Err(e));
                         }
@@ -117,11 +111,7 @@ impl AsyncRead for AsyncQueue {
 
 impl AsyncWrite for AsyncQueue {
     // Write to wintun is already nonblocking
-    fn poll_write(
-        mut self: Pin<&mut Self>,
-        _cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<io::Result<usize>> {
+    fn poll_write(mut self: Pin<&mut Self>, _cx: &mut Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>> {
         Poll::Ready(self.session.write(buf))
     }
 

@@ -8,11 +8,7 @@ use std::task::{Context, Poll};
 pub type AsyncInterface = CommonInterface<AsyncQueue>;
 
 impl AsyncRead for AsyncInterface {
-    fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+    fn poll_read(mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<io::Result<usize>> {
         match self.inner_queue_mut() {
             Ok(queue) => Pin::new(queue).poll_read(cx, buf),
             Err(e) => Poll::Ready(Err(e)),
@@ -21,11 +17,7 @@ impl AsyncRead for AsyncInterface {
 }
 
 impl AsyncWrite for AsyncInterface {
-    fn poll_write(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<io::Result<usize>> {
+    fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>> {
         match self.inner_queue_mut() {
             Ok(queue) => Pin::new(queue).poll_write(cx, buf),
             Err(e) => Poll::Ready(Err(e)),

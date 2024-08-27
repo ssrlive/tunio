@@ -23,10 +23,7 @@ impl<Q: FdQueueT> InterfaceT for UtunInterface<Q> {
     type PlatformDriver = Driver;
     type PlatformIfConfig = PlatformIfConfig;
 
-    fn new_up(
-        _driver: &mut Self::PlatformDriver,
-        params: IfConfig<Self::PlatformIfConfig>,
-    ) -> Result<Self, Error> {
+    fn new_up(_driver: &mut Self::PlatformDriver, params: IfConfig<Self::PlatformIfConfig>) -> Result<Self, Error> {
         let queue = Q::new(create_device(&params.name, Q::BLOCKING)?);
 
         Ok(Self {
@@ -35,10 +32,7 @@ impl<Q: FdQueueT> InterfaceT for UtunInterface<Q> {
         })
     }
 
-    fn new(
-        driver: &mut Self::PlatformDriver,
-        params: IfConfig<Self::PlatformIfConfig>,
-    ) -> Result<Self, Error> {
+    fn new(driver: &mut Self::PlatformDriver, params: IfConfig<Self::PlatformIfConfig>) -> Result<Self, Error> {
         let mut interface = Self::new_up(driver, params)?;
         interface.down()?;
         Ok(interface)

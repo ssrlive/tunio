@@ -15,7 +15,7 @@ use std::io::{Read, Write};
 use tunio::traits::{DriverT, InterfaceT};
 use tunio::{DefaultDriver, DefaultInterface};
 
-fn main() {
+{
     // DefaultDriver is an alias for a supported driver for current platform.
     // It may be not optimal for your needs (for example, it can lack support of TAP),
     // but it will work in some cases. If you need another driver, then import and use it instead.

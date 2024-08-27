@@ -25,11 +25,7 @@ impl FdQueueT for TokioFdQueue {
 }
 
 impl AsyncRead for TokioFdQueue {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+    fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<io::Result<usize>> {
         let self_mut = self.get_mut();
         loop {
             let mut guard = ready!(self_mut.inner.poll_read_ready_mut(cx))?;
@@ -46,11 +42,7 @@ impl AsyncRead for TokioFdQueue {
 }
 
 impl AsyncWrite for TokioFdQueue {
-    fn poll_write(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<io::Result<usize>> {
+    fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>> {
         let self_mut = self.get_mut();
         loop {
             let mut guard = ready!(self_mut.inner.poll_write_ready_mut(cx))?;

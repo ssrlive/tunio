@@ -1,13 +1,6 @@
-use core::marker::{Send, Sync};
+#[derive(Debug, Clone, Copy)]
+pub struct HandleWrapper<T>(pub T);
 
-pub struct HandleWrapper<T: Copy>(pub T);
+unsafe impl<T> Send for HandleWrapper<T> {}
 
-impl<T: Copy> HandleWrapper<T> {
-    pub(crate) fn clone(&self) -> Self {
-        Self(self.0)
-    }
-}
-
-unsafe impl<T: Copy> Send for HandleWrapper<T> {}
-
-unsafe impl<T: Copy> Sync for HandleWrapper<T> {}
+unsafe impl<T> Sync for HandleWrapper<T> {}

@@ -17,14 +17,8 @@ pub trait InterfaceT: Sized {
     type PlatformDriver: DriverT;
     type PlatformIfConfig: PlatformIfConfigT;
 
-    fn new(
-        driver: &mut Self::PlatformDriver,
-        params: IfConfig<Self::PlatformIfConfig>,
-    ) -> Result<Self, Error>;
-    fn new_up(
-        driver: &mut Self::PlatformDriver,
-        params: IfConfig<Self::PlatformIfConfig>,
-    ) -> Result<Self, Error> {
+    fn new(driver: &mut Self::PlatformDriver, params: IfConfig<Self::PlatformIfConfig>) -> Result<Self, Error>;
+    fn new_up(driver: &mut Self::PlatformDriver, params: IfConfig<Self::PlatformIfConfig>) -> Result<Self, Error> {
         let mut interface = Self::new(driver, params)?;
         interface.up()?;
         Ok(interface)
